@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover" />
+<title>Procedural Tree — local demo</title>
+<style>
+  html,body{margin:0;height:100%;background:#0b1622;color:#dbe7f3;font-family:system-ui,sans-serif}
+  #scene{position:fixed;inset:0;width:100%;height:100%;display:block}
+  #panel{position:fixed;top:12px;left:12px;background:rgba(10,20,32,.85);border:1px solid #24405c;
+    border-radius:10px;padding:12px 14px;width:250px;backdrop-filter:blur(4px)}
+  #panel h1{font-size:15px;margin:0 0 8px}
+  #panel label{display:block;font-size:12px;margin:8px 0 2px;opacity:.9}
+  #panel input[type=range]{width:100%}
+  #panel .row{display:flex;gap:8px;margin-top:10px}
+  #panel button{flex:1;padding:7px;border-radius:8px;border:1px solid #2c5378;background:#14324e;color:#fff;cursor:pointer}
+  #panel button:hover{background:#1b4266}
+  #stats{font-size:12px;margin-top:10px;line-height:1.6;opacity:.95}
+  #panel input[type=number]{width:70px;background:#0e2237;color:#dbe7f3;border:1px solid #2c5378;border-radius:8px;padding:6px}
+  #panel select{flex:1;min-width:0;background:#0e2237;color:#dbe7f3;border:1px solid #2c5378;border-radius:8px;padding:6px}
+  #btn-dice{flex:0 0 auto}
+  .row{align-items:center}
+  .row input[type=range]{width:auto;flex:1;min-width:0}
+  #legend{display:flex;flex-wrap:wrap;gap:6px;font-size:11px;margin-top:8px;opacity:.9}
+  #legend i{display:inline-block;width:9px;height:9px;border-radius:2px;margin-right:3px}
+  #hint{position:fixed;bottom:10px;left:12px;font-size:12px;opacity:.7}
+  #panel h1{display:flex;align-items:center;gap:8px}
+  #panel h1 span{flex:1}
+  #btn-collapse{flex:0 0 auto;width:30px;padding:2px 0;font-size:14px}
+  #panel.collapsed label,#panel.collapsed input,#panel.collapsed .row,
+  #panel.collapsed #stats,#panel.collapsed #legend{display:none}
+  #touch{position:fixed;inset:auto 0 0 0;display:flex;justify-content:space-between;align-items:flex-end;
+    padding:0 18px calc(20px + env(safe-area-inset-bottom));pointer-events:none;z-index:5}
+  #stick{width:124px;height:124px;border-radius:50%;pointer-events:auto;
+    background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.3);position:relative}
+  #nub{position:absolute;left:50%;top:50%;width:54px;height:54px;border-radius:50%;
+    transform:translate(-50%,-50%);background:rgba(255,255,255,.3)}
+  #btn-tag{width:84px;height:84px;border-radius:50%;pointer-events:auto;font-size:16px;font-weight:700;
+    border:2px solid #ffd76a;background:rgba(20,50,78,.85);color:#fff}
+  #hud{position:fixed;top:12px;left:50%;transform:translateX(-50%);background:rgba(10,20,32,.85);
+    border:1px solid #24405c;border-radius:10px;padding:8px 14px;font-size:14px;display:flex;gap:14px;align-items:center}
+  #hud button{padding:6px 12px;border-radius:8px;border:1px solid #2c5378;background:#14324e;color:#fff;cursor:pointer}
+  #hud button:hover{background:#1b4266}
+  #cross{position:fixed;left:50%;top:50%;transform:translate(-50%,-50%);font-size:22px;color:#fff;opacity:.85;pointer-events:none}
+  #toast{position:fixed;bottom:56px;left:50%;transform:translateX(-50%);background:rgba(10,20,32,.92);
+    border:1px solid #24405c;padding:8px 16px;border-radius:8px;font-size:13px;opacity:0;transition:opacity .3s;pointer-events:none;max-width:80vw;text-align:center}
+  [hidden]{display:none!important}
+  @media (max-width:700px){
+    #panel{width:min(216px,70vw);padding:10px 12px}
+    #panel button{padding:10px 7px;font-size:14px}
+    #hud{font-size:12px;gap:8px;padding:6px 10px;max-width:94vw;flex-wrap:wrap;justify-content:center}
+    #hint{display:none}
+  }
+</style>
+<script type="importmap">
+{ "imports": { "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js" } }
+</script>
+</head>
+<body>
+<canvas id="scene"></canvas>
+<div id="panel">
+  <h1><span>🌳 Procedural Tree (SpeedTree-lite)</span><button id="btn-collapse" title="hide/show">–</button></h1>
+  <label>World generator</label>
+  <div class="row">
+    <select id="p-world"></select>
+    <button id="btn-dice" title="random world">🎲</button>
+  </div>
+  <label>Seed <span id="v-seed">1337</span></label>
+  <input id="p-seed" type="range" min="1" max="9999" value="1337" />
+  <label>Depth <span id="v-depth">4</span></label>
+  <input id="p-depth" type="range" min="2" max="5" value="4" />
+  <label>Spread <span id="v-spread">0.55</span></label>
+  <input id="p-spread" type="range" min="0.2" max="1" step="0.01" value="0.55" />
+  <label>Wind <span id="v-wind">0.6</span></label>
+  <input id="p-wind" type="range" min="0" max="2" step="0.05" value="0.6" />
+  <label>Time <span id="v-time">10:00</span></label>
+  <input id="p-time" type="range" min="0" max="24" step="0.1" value="10" />
+  <label>Trees <span id="v-trees">12</span> (max 20000)</label>
+  <div class="row">
+    <input id="p-trees" type="range" min="1" max="2000" value="12" />
+    <input id="n-trees" type="number" min="1" max="20000" value="12" />
+  </div>
+  <label>Grass <span id="v-grass">6,000</span></label>
+  <input id="p-grass" type="range" min="0" max="60000" step="1000" value="6000" />
+  <label>Species library <span id="v-species">1,000</span> / 73,274 on Earth</label>
+  <input id="p-species" type="range" min="1" max="73274" value="1000" />
+  <label style="margin-top:8px"><input id="p-lod" type="checkbox" checked style="width:auto" /> Auto LOD (hide far leaves)</label>
+  <label style="margin-top:4px"><input id="p-redlist" type="checkbox" style="width:auto" /> Red List overlay (color by extinction risk)</label>
+  <div class="row hideable">
+    <button id="btn-grow">Regrow</button>
+    <button id="btn-spin">Spin: on</button>
+    <button id="btn-cam">Cam: orbit</button>
+  </div>
+  <div class="row hideable">
+    <button id="btn-play">▶ Play: Red List Survey</button>
+    <button id="btn-cycle">Cycle: on</button>
+  </div>
+  <div id="stats">…</div>
+  <div id="legend" title="IUCN Red List categories (overlay mode)">
+    <span><i style="background:#e41a1c"></i>CR</span>
+    <span><i style="background:#ff7f00"></i>EN</span>
+    <span><i style="background:#ffd92f"></i>VU</span>
+    <span><i style="background:#4daf4a"></i>LC</span>
+    <span><i style="background:#a6d854"></i>NT</span>
+    <span><i style="background:#999"></i>DD</span>
+    <span><i style="background:#ddd"></i>NE</span>
+  </div>
+</div>
+<div id="hint">orbit: drag = look · wheel = zoom · free: WASD + QE · needs internet once for three.js CDN</div>
+<div id="hud" hidden>
+  <span id="hud-score">🌳 0/10</span>
+  <span id="hud-time">⏱ 3:00</span>
+  <span id="hud-sub"></span>
+  <button id="btn-quit">Quit</button>
+</div>
+<div id="cross" hidden>+</div>
+<div id="toast"></div>
+<div id="touch" hidden>
+  <div id="stick"><div id="nub"></div></div>
+  <button id="btn-tag">TAG</button>
+</div>
+<script type="module" src="./tree.js"></script>
+</body>
+</html>
