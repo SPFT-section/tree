@@ -31,7 +31,7 @@ let terrainMesh = null, terrainInfo = { size: 0, seg: 0, tris: 0 }; // rebuilt e
 scene.add(forest, grassGroup);
 
 let spin = true, lodOn = true, redlist = false, treeCount = 12, speciesCount = 1000;
-let grassCount = 600000, grassInfo = { blades: 0, chunks: 0 };
+let grassCount = 6000, grassInfo = { blades: 0, chunks: 0 };
 let frames = 0, fpsT0 = performance.now(), fps = 0;
 
 let regrowToken = 0;

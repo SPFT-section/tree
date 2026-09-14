@@ -105,8 +105,7 @@ function moonTexture() {
     c.beginPath(); c.arc(x, y, rad, 0, 7); c.fill();
     c.strokeStyle = 'rgba(235,235,240,0.7)';
     c.lineWidth = Math.max(1, rad * 0.18);
-    c.beginPath(); c.arc(x - rad * 0.15, y - rad * 0.15, rad * 0.85, Math.PI * 0.9, Math.PI * 1.9); c.fill();
-    c.stroke();
+    c.beginPath(); c.arc(x - rad * 0.15, y - rad * 0.15, rad * 0.85, Math.PI * 0.9, Math.PI * 1.9); c.stroke();
   }
   const tex = new THREE.CanvasTexture(cv);
   tex.colorSpace = THREE.SRGBColorSpace;

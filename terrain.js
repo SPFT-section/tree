@@ -13,13 +13,14 @@ const T = { seed: 1, radius: 24, amp: 1.2 };
 
 // Central placement config: terrain is the source of truth for both trees
 // and grass (not tree.js / forest.js). forest.js + grass.js import these.
+const TREE_MIN_RADIUS = 24, TREE_RADIUS_K = 6, TREE_MAX = 20000;
 export const treeConfig = {
-  minRadius: 24,
-  radiusK: 6,
-  maxTrees: 20000,
+  minRadius: TREE_MIN_RADIUS,
+  radiusK: TREE_RADIUS_K,
+  maxTrees: TREE_MAX,
   radiusFor(treeCount) {
-    treeCount = Math.max(1, Math.min(this.maxTrees, Math.floor(treeCount) || 1));
-    return Math.max(this.minRadius, this.radiusK * Math.sqrt(treeCount));
+    treeCount = Math.max(1, Math.min(TREE_MAX, Math.floor(treeCount) || 1));
+    return Math.max(TREE_MIN_RADIUS, TREE_RADIUS_K * Math.sqrt(treeCount));
   },
 };
 
@@ -41,7 +42,7 @@ export function terrainRadius() {
 
 export function prepareTerrain(seed, radius) {
   T.seed = (seed >>> 0) || 1;
-  T.radius = Math.max(8, radius);
+  T.radius = Math.max(8, radius > 0 ? radius : TREE_MIN_RADIUS);
   T.amp = Math.min(2.5, Math.max(0.8, T.radius * 0.05));
 }
 

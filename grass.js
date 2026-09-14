@@ -24,7 +24,6 @@ export const grassNodes = []; // { mesh, pos } per chunk — culling + LOD units
 // source of truth. Re-exported here for compat.
 export const BLADE_H = grassConfig.BLADE_H;
 const CELLS = grassConfig.CELLS;
-const MAX_GRASS = grassConfig.MAX;
 
 let bladeGeo = null;
 function getBladeGeo() {
