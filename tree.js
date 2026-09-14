@@ -2,9 +2,9 @@
 // Geometry/species/forest logic lives in builder.js / species.js / forest.js.
 import * as THREE from 'three';
 import { wind } from './materials.js';
-import { forest, treeNodes, clearForest, populateForest, world, forestRadiusFor } from './forest.js';
+import { forest, treeNodes, clearForest, populateForest } from './forest.js';
 import { grassGroup, grassNodes, populateGrass } from './grass.js';
-import { prepareTerrain, buildTerrainMesh, groundHeight } from './terrain.js';
+import { prepareTerrain, buildTerrainMesh, groundHeight, terrainRadius, forestRadiusFor } from './terrain.js';
 import { startGame, stopGame, updateGame, tagTree, isGameActive, toast, GOAL, joy, addLook } from './game/game.js';
 import { initDayNight, updateDayNight, dayState, fmtTime } from './daynight.js';
 import { PRESETS, applyPreset, randomWorld } from './worldgen.js';
@@ -72,7 +72,7 @@ async function regrow() {
   terrainInfo = buildTerrainMesh();
   terrainMesh = terrainInfo.mesh;
   scene.add(terrainMesh);
-  grassInfo = populateGrass(seed, world.r, grassCount);
+  grassInfo = populateGrass(seed, terrainRadius(), grassCount);
   if (stats.error) {
     document.getElementById('stats').innerHTML = `Build refused: ${stats.error}`;
     return;
@@ -250,7 +250,7 @@ addEventListener('pointermove', e => {
 canvas.addEventListener('wheel', e => {
   if (isGameActive()) return;
   if (camMode === 'orbit') {
-    radius = Math.max(4, Math.min(Math.max(40, world.r * 1.6), radius + e.deltaY * 0.01));
+    radius = Math.max(4, Math.min(Math.max(40, terrainRadius() * 1.6), radius + e.deltaY * 0.01));
   } else {
     // dolly along view direction
     const f = new THREE.Vector3();
@@ -263,7 +263,7 @@ canvas.addEventListener('wheel', e => {
 function clampCamPos() {
   const minY = groundHeight(camera.position.x, camera.position.z) + 0.4;
   camera.position.y = Math.max(minY, Math.min(120, camera.position.y));
-  const bound = world.r + 40;
+  const bound = terrainRadius() + 40;
   const r = Math.hypot(camera.position.x, camera.position.z);
   if (r > bound) {
     camera.position.x *= bound / r;
@@ -299,7 +299,7 @@ addEventListener('blur', () => keys.clear());
 const _fwd = new THREE.Vector3(), _rgt = new THREE.Vector3();
 function moveFree(dt) {
   const fast = (keys.has('ShiftLeft') || keys.has('ShiftRight')) ? 3 : 1;
-  const base = 6 + world.r * 0.12; // keep pace with world size
+  const base = 6 + terrainRadius() * 0.12; // keep pace with terrain size
   const sp = base * fast * dt;
   _fwd.set(-Math.sin(yaw) * Math.cos(pitch), Math.sin(pitch), -Math.cos(yaw) * Math.cos(pitch));
   _rgt.set(Math.cos(yaw), 0, -Math.sin(yaw));
@@ -344,7 +344,7 @@ renderer.setAnimationLoop(() => {
   // Distance LOD: hide leaf cards on far chunks (now spatially compact,
   // so this toggles per area — with hysteresis to avoid flicker).
   if (++lodTick % 10 === 0) {
-    const far = Math.min(60, 26 + world.r * 0.05), near = far * 0.85;
+    const far = Math.min(60, 26 + terrainRadius() * 0.05), near = far * 0.85;
     for (const n of treeNodes) {
       if (!n.leaves) continue;
       if (!lodOn) { if (!n.leaves.visible) n.leaves.visible = true; continue; }
@@ -353,7 +353,7 @@ renderer.setAnimationLoop(() => {
       else if (d < near) n.leaves.visible = true;
     }
     // Grass is ground detail: hide far chunks (with hysteresis vs. popping).
-    const gFar = Math.min(70, 30 + world.r * 0.1), gNear = gFar * 0.85;
+    const gFar = Math.min(70, 30 + terrainRadius() * 0.1), gNear = gFar * 0.85;
     for (const n of grassNodes) {
       if (!n.mesh) continue;
       if (!lodOn) { if (!n.mesh.visible) n.mesh.visible = true; continue; }

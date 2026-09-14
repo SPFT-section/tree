@@ -22,7 +22,7 @@ import { mulberry32 } from './rng.js';
 import { barkMat, leafMat } from './materials.js';
 import { speciesParams, speciesStatus, STATUS_COLORS, WORLD_TREES } from './species.js';
 import { buildTree } from './builder.js';
-import { groundHeight } from './terrain.js';
+import { groundHeight, treeConfig } from './terrain.js';
 
 export const forest = new THREE.Group();
 export const treeNodes = []; // { leaves, pos } per chunk — LOD + culling units
@@ -38,11 +38,10 @@ export function chunkSizeFor(treeCount) {
   return CHUNK;
 }
 
-// Single source of truth for forest radius (tree.js needs it before building
-// terrain, populateForest needs it for layout).
+// Single source of truth for forest radius lives in terrain.js (treeConfig).
+// Re-exported here for compat; new code should import from terrain.js.
 export function forestRadiusFor(treeCount) {
-  treeCount = Math.max(1, Math.min(20000, Math.floor(treeCount) || 1));
-  return Math.max(24, 6 * Math.sqrt(treeCount));
+  return treeConfig.radiusFor(treeCount);
 }
 
 const templateCache = new Map(); // key -> { trunkGeo, leafXforms, tris, leaves, color }

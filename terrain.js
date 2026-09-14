@@ -11,6 +11,34 @@ import * as THREE from 'three';
 
 const T = { seed: 1, radius: 24, amp: 1.2 };
 
+// Central placement config: terrain is the source of truth for both trees
+// and grass (not tree.js / forest.js). forest.js + grass.js import these.
+export const treeConfig = {
+  minRadius: 24,
+  radiusK: 6,
+  maxTrees: 20000,
+  radiusFor(treeCount) {
+    treeCount = Math.max(1, Math.min(this.maxTrees, Math.floor(treeCount) || 1));
+    return Math.max(this.minRadius, this.radiusK * Math.sqrt(treeCount));
+  },
+};
+
+export const grassConfig = {
+  MAX: 100000,
+  CELLS: 4,
+  BLADE_H: 0.55,
+};
+
+// Single source of truth for forest radius (moved here from forest.js so
+// grass no longer depends on the tree module for its placement radius).
+export function forestRadiusFor(treeCount) {
+  return treeConfig.radiusFor(treeCount);
+}
+
+export function terrainRadius() {
+  return T.radius;
+}
+
 export function prepareTerrain(seed, radius) {
   T.seed = (seed >>> 0) || 1;
   T.radius = Math.max(8, radius);

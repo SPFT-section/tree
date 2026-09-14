@@ -16,13 +16,15 @@
 import * as THREE from 'three';
 import { mulberry32 } from './rng.js';
 import { wind } from './materials.js';
-import { groundHeight } from './terrain.js';
+import { groundHeight, grassConfig, terrainRadius } from './terrain.js';
 
 export const grassGroup = new THREE.Group();
 export const grassNodes = []; // { mesh, pos } per chunk — culling + LOD units
-export const BLADE_H = 0.55;
-const CELLS = 4;
-const MAX_GRASS = 100000;
+// Grass placement config lives in terrain.js (not tree.js): terrain is the
+// source of truth. Re-exported here for compat.
+export const BLADE_H = grassConfig.BLADE_H;
+const CELLS = grassConfig.CELLS;
+const MAX_GRASS = grassConfig.MAX;
 
 let bladeGeo = null;
 function getBladeGeo() {
@@ -87,9 +89,10 @@ export function clearGrass() {
   grassNodes.length = 0;
 }
 
-export function populateGrass(seed, radius, count) {
+export function populateGrass(seed, radius = terrainRadius(), count) {
   clearGrass();
-  count = Math.max(0, Math.min(MAX_GRASS, Math.floor(count) || 0));
+  if (!(radius > 0)) radius = terrainRadius();
+  count = Math.max(0, Math.min(grassConfig.MAX, Math.floor(count) || 0));
   if (!count || !(radius > 0)) return { blades: 0, chunks: 0 };
   const rand = mulberry32(((seed ^ 0x51ab3f) >>> 0));
 

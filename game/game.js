@@ -4,8 +4,8 @@
 // the targets, the Red List overlay doubles as a scanner, and grass / wind /
 // chunked LOD all keep running underneath.
 import * as THREE from 'three';
-import { forest, treeRecords, world } from '../forest.js';
-import { groundHeight } from '../terrain.js';
+import { forest, treeRecords } from '../forest.js';
+import { groundHeight, terrainRadius } from '../terrain.js';
 import { isThreatened, STATUS_LABEL } from '../species.js';
 
 export const GOAL = 10, TIME = 180;
@@ -124,7 +124,7 @@ export function updateGame(dt, camera, elapsed) {
   const p = camera.position;
   p.addScaledVector(_fwd, sp * iy);
   p.addScaledVector(_rgt, sp * ix);
-  const bound = world.r + 40;
+  const bound = terrainRadius() + 40;
   const r = Math.hypot(p.x, p.z);
   if (r > bound) { p.x *= bound / r; p.z *= bound / r; }
   p.y = groundHeight(p.x, p.z) + 1.7;
