@@ -11,7 +11,15 @@ import { PRESETS, applyPreset, randomWorld } from './worldgen.js';
 import { isThreatened } from './species.js';
 
 const canvas = document.getElementById('scene');
-const renderer = new THREE.WebGLRenderer({ canvas, antialias: true });
+let renderer;
+try {
+  renderer = new THREE.WebGLRenderer({ canvas, antialias: true });
+} catch (err) {
+  document.getElementById('stats').innerHTML =
+    `⚠ WebGL ใช้ไม่ได้ (เบราว์เซอร์ปิด WebGL หรือการ์ดจอโดน block)<br>WebGL unavailable: ${err && err.message ? err.message : err}<br>ลอง Chrome/Edge + เปิด Hardware acceleration`;
+  if (window.__treeBootError) window.__treeBootError('⚠ WebGL ใช้ไม่ได้ — ลอง Chrome/Edge + เปิด Hardware acceleration<br><span>WebGL unavailable. Try Chrome/Edge with hardware acceleration on.</span>');
+  throw err;
+}
 const IS_TOUCH = 'ontouchstart' in window || (navigator.maxTouchPoints || 0) > 0;
 if (IS_TOUCH) document.body.classList.add('touch');
 renderer.setPixelRatio(Math.min(window.devicePixelRatio ?? 1, IS_TOUCH ? 1.5 : 2));
@@ -363,6 +371,7 @@ renderer.setAnimationLoop(() => {
     }
   }
   renderer.render(scene, camera);
+  window.__treeBooted = true;
   frames++;
   const now = performance.now();
   if (now - fpsT0 >= 500) {

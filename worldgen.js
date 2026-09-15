@@ -19,6 +19,7 @@ function setWorld(w, regrow) {
   $('p-depth').value = w.depth;
   $('p-spread').value = w.spread;
   $('n-trees').value = w.trees;
+  $('p-trees').value = Math.min(w.trees, 2000);
   $('p-grass').value = w.grass;
   $('p-species').value = w.species;
   $('p-wind').value = w.wind;

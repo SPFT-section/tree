@@ -44,6 +44,9 @@
   #cross{position:fixed;left:50%;top:50%;transform:translate(-50%,-50%);font-size:22px;color:#fff;opacity:.85;pointer-events:none}
   #toast{position:fixed;bottom:56px;left:50%;transform:translateX(-50%);background:rgba(10,20,32,.92);
     border:1px solid #24405c;padding:8px 16px;border-radius:8px;font-size:13px;opacity:0;transition:opacity .3s;pointer-events:none;max-width:80vw;text-align:center}
+  #boot-err{position:fixed;bottom:12px;left:50%;transform:translateX(-50%);background:rgba(80,10,10,.94);
+    border:1px solid #a33;padding:10px 16px;border-radius:8px;font-size:13px;max-width:86vw;text-align:center;z-index:9}
+  #boot-err span{opacity:.8;font-size:12px}
   [hidden]{display:none!important}
   @media (max-width:700px){
     #panel{width:min(216px,70vw);padding:10px 12px}
@@ -53,7 +56,33 @@
   }
 </style>
 <script type="importmap">
-{ "imports": { "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js" } }
+{ "imports": { "three": "./vendor/three.module.js" } }
+</script>
+<script>
+(function () {
+  var el = null;
+  function show(msg) {
+    if (!el) el = document.getElementById('boot-err');
+    if (!el) return;
+    el.hidden = false;
+    el.innerHTML = msg;
+  }
+  window.__treeBootError = show;
+  window.addEventListener('error', function (e) {
+    if (window.__treeBooted) return;
+    var m = (e && e.message) || 'script error';
+    show('⚠ Boot error: ' + m + '<br><span>เปิด F12 → Console ดูบรรทัดแดง / Check F12 Console for details.</span>');
+  });
+  window.addEventListener('unhandledrejection', function (e) {
+    if (window.__treeBooted) return;
+    var m = (e && e.reason && (e.reason.message || e.reason)) || 'unhandled error';
+    show('⚠ Boot error: ' + m + '<br><span>เปิด F12 → Console ดูบรรทัดแดง / Check F12 Console for details.</span>');
+  });
+  setTimeout(function () {
+    if (window.__treeBooted) return;
+    show('⚠ ยังโหลด 3D ไม่ขึ้น (ยังดำอยู่) — สาเหตุที่พบบ่อย: เปิดด้วย file:// แทน http server, หรือ WebGL ถูกปิด<br><span>รัน run.bat แล้วเปิด http://127.0.0.1:8001 · F12 → Console ดู error · Still black? run run.bat, open the http URL (not file://), check Console.</span>');
+  }, 8000);
+})();
 </script>
 </head>
 <body>
@@ -115,6 +144,7 @@
 </div>
 <div id="cross" hidden>+</div>
 <div id="toast"></div>
+<div id="boot-err" hidden></div>
 <div id="touch" hidden>
   <div id="stick"><div id="nub"></div></div>
   <button id="btn-tag">TAG</button>

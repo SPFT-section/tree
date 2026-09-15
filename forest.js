@@ -135,10 +135,22 @@ const tick = () => new Promise(r => setTimeout(r, 0)); // yield to UI between ch
 export async function populateForest(seed, treeCount, speciesCount, depth, spread, mode = 'botanical', onProgress = null, isCancelled = null) {
   const t0 = performance.now();
   cacheEvictions = 0;
-  // Records pushed below belong to THIS build; on error we roll them back so
-  // a refused build can't leave phantom tag targets behind an empty forest.
-  // (On cancel we touch nothing — the superseding build owns the arrays.)
+  // Records/meshes pushed below belong to THIS build; on error or cancel
+  // we roll them back so a refused/superseded build can't leave phantom
+  // tag targets or stray chunks behind in the shared forest group.
   const recordBase = treeRecords.length;
+  const forestBase = forest.children.length;
+  const nodesBase = treeNodes.length;
+  function rollbackPartial() {
+    if (treeRecords.length > recordBase) treeRecords.length = recordBase;
+    if (treeNodes.length > nodesBase) treeNodes.length = nodesBase;
+    while (forest.children.length > forestBase) {
+      const o = forest.children[forest.children.length - 1];
+      forest.remove(o);
+      if (o.geometry && o.geometry !== sharedLeafGeo) o.geometry.dispose?.();
+      if (o.isInstancedMesh) o.dispose?.();
+    }
+  }
   treeCount = Math.max(1, Math.min(20000, Math.floor(treeCount) || 1));
   speciesCount = Math.max(1, Math.min(WORLD_TREES, Math.floor(speciesCount) || 1));
   const quality = pickQuality(treeCount, depth);
@@ -171,7 +183,7 @@ export async function populateForest(seed, treeCount, speciesCount, depth, sprea
     trees.push({ tpl, m, st, key: morton16(gx, gz) });
     treeRecords.push({ x: px, y: _pp.y, z: pz, species: speciesId, st });
     if ((t & 4095) === 4095) {
-      if (isCancelled?.()) return { cancelled: true };
+      if (isCancelled?.()) { rollbackPartial(); return { cancelled: true }; }
       await tick();
     }
   }
@@ -186,7 +198,7 @@ export async function populateForest(seed, treeCount, speciesCount, depth, sprea
   }
   const estMB = (estV * 28 + estL * 76) / 1048576;
   if (estMB > MEM_HARD) {
-    if (!isCancelled?.()) treeRecords.length = recordBase; // roll back phantom records
+    rollbackPartial();
     return { error: `needs ~${Math.round(estMB)} MB, over the ${MEM_HARD} MB budget — lower Trees or Depth`, unique: used.size, totalTris: 0, cached: templateCache.size, evictions: cacheEvictions, chunks: 0, statusCounts, mode, buildMs: performance.now() - t0, estMB, quality, treeCount };
   }
 
@@ -197,7 +209,7 @@ export async function populateForest(seed, treeCount, speciesCount, depth, sprea
   const nChunks = Math.ceil(trees.length / chunkSize);
   let totalTris = 0;
   for (let c = 0; c < trees.length; c += chunkSize) {
-    if (isCancelled?.()) return { cancelled: true };
+    if (isCancelled?.()) { rollbackPartial(); return { cancelled: true }; }
     const slice = trees.slice(c, c + chunkSize);
     let vC = 0, iC = 0, leafTotal = 0, trisAdd = 0;
     const kept = new Array(slice.length);
