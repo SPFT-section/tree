@@ -62,7 +62,7 @@ export function skyAt(t) {
   };
 }
 
-let sun = null, hemi = null, moon = null;
+let sun = null, hemi = null, moon = null, sunTarget = null, moonTarget = null;
 let skyRig = null, dome = null, domeU = null;
 let sunCore = null, sunHalo = null, sunHaze = null, moonBall = null, stars = null;
 const _sunC0 = new THREE.Color(0xff8f3f), _sunC1 = new THREE.Color(0xfff2dd), _tmpC = new THREE.Color();
@@ -114,7 +114,12 @@ function moonTexture() {
 
 export function initDayNight(scene, sunLight, hemiLight) {
   sun = sunLight; hemi = hemiLight;
+  sunTarget = new THREE.Object3D();
+  moonTarget = new THREE.Object3D();
+  scene.add(sunTarget, moonTarget);
+  sun.target = sunTarget;
   moon = new THREE.DirectionalLight(0x9fb8ff, 0);
+  moon.target = moonTarget;
   moon.position.set(-6, 10, -4);
   scene.add(moon);
 
@@ -220,6 +225,8 @@ export function applyDayNight(scene, t, camPos) {
   if (scene.fog) scene.fog.color.copy(_tmpC);
   if (hemi) hemi.intensity = s.hemiI;
   if (skyRig && camPos) skyRig.position.copy(camPos);
+  if (sunTarget && camPos) sunTarget.position.copy(camPos);
+  if (moonTarget && camPos) moonTarget.position.copy(camPos);
 
   // Sky dome gradient follows the keys; sun lobe tracks the sun.
   _tmpC.copy(_sunC0).lerp(_sunC1, s.sunWarm);
